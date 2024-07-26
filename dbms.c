@@ -5,33 +5,28 @@
 
 
 int db_show_row(const struct db_table *db, unsigned int row){
-	//to store the row of data and allocate size/space
+	//Allocate memory space to the row
 	struct album *rowData = malloc(1*sizeof(struct album));
 	if(rowData != NULL){
-	//making sure there is data 
+		//Make sure the row is within the table
 		if(row<db->rows_used && row>=0){
-		//make sure the row is in the table
 			*rowData = db->table[row];
-			//make row = the row data 
-			
-			
-			//struct album *rowData = *db[row];
-
-			//if table has row
-			//print and return 1 
-			//else return 0
-			//print
+			/*I made the id and year into strings so that if they were 
+			too long they could be truncated (i.e I can format them 
+			according the brief requirements) */
 			char id[100] ;
 			char year[100] ;
 
 			sprintf(id, "%lu", rowData->id);
 			sprintf(year, "%d", rowData->year);
 
-			//printf("%6.6s:", id);
+			
 			printf("%6.6s:", id);
 			printf("%20.20s:", rowData->title);
 			printf("%20.20s:", rowData->artist);
 			printf("%4.4s\n", year);
+			//freeing the memory as it's no longer required
+			free(rowData);
 			return 1;
 		}
 	}
@@ -42,96 +37,67 @@ int db_show_row(const struct db_table *db, unsigned int row){
 
 int db_add_row(struct db_table *db, struct album *a){
 	
-	//has to be space
+	//If all space is used add 5 memory for 5 more rows
 	if(db->rows_used==db->rows_total){
-		//if all space is used
 		int size = db->rows_total +5;
-		//reallocate mem (add 5)
 		db->table = realloc(db->table, size*sizeof(struct album));
-		//if mem is null there was not enough space
+		//If reallocation fails, adding row has failed
 		if(db->table == NULL){
 			return 0;
 		}
-		//if i use size will it change data type
 		db->rows_total = db->rows_total+5;
-		
 	}
 
-	//store in rows used +1 
-	//add the row 
-	//need to equal row amount cause index starts from 0
+	//Adding the row to the table
 	int row = db->rows_used;
 	db->table[row] = *a;
 
 	
 	db->rows_used = row+1;
-	db_show_row(db, row);
 	return 1;
 }
 
 int db_remove_row(struct db_table *db, unsigned long id){
-	//to get album 
-	//for every row in the table 
-	//int rows = db -> rows_used;
+	
 	int success = 0;
 	int index = -1;
 	
-	//struct album *rowData = malloc(1*sizeof(struct album));
+	
+	//Check if id is in table, if it is store that row's data 
 	for(unsigned int i = 0; i<db -> rows_used; i++){
-
-		//access album id = table[1][0]??
-		struct album rowData = db -> table[i];
-		unsigned long albumId =  rowData.id;
-		printf("%lu\n",albumId);
-		//if id are equal
+		
+		unsigned long albumId = db -> table[i].id;
 		if(albumId == id){
 			index = i;
 			success = 1;
 			break;
 		}
-		//free(rowData);
-
 	}
 
-	//delete that row - do it by moving all the other ones up 
-
-	//for all table[i] after row 
-	//records after need to be moved up 
+	//Move the records after that row up to delete the row
 	if(index >= 0){
 		for(int j = index; j<db -> rows_used; j++){
 			db->table[j] = db->table[j+1];
-			//make table[i] = table[i+1] - moves all up 
 		}
 		db -> rows_used = db -> rows_used - 1;
 	}
-	
 			
 	
-	//if rowtotal-rowsused = 5 
+	//If more than 5 rows are unused, free 5 rows of space
 	int totalRows = db -> rows_total;
 	if(totalRows - db -> rows_used == 5){
-		//free 5 rows of memory 
-		
 		db->table = realloc(db->table, (totalRows-5)*sizeof(struct album));
 		if(db == NULL){
 			return 0;
 		}
-		//update total 
 		db -> rows_total = totalRows-5;
-		printf("total %d\n", db -> rows_total);
 	}
-	//update used rows 
-
-	//if rowused = 0 (or 1 if before updating)
+	
+	//If no rows are used, free whole table
 	if(db -> rows_used == 0){
-		//free whole array 
-		free(db);
-		//rows = 0 
-		db->rows_total = 0;
-		db->rows_used = 0;
-		//table = null
+		free(db->table);
 		db->table = NULL;
-		printf("total after %d\n", db -> rows_total);
+		//(Used and total rows have already been updated to 0, so we don't need to reset them to 0)
 	}
 	return success; 	
 }
